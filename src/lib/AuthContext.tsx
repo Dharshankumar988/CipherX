@@ -18,15 +18,40 @@ type AuthContextType = {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  refreshProfile: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextType>({ session: null, user: null, profile: null, loading: true });
+const AuthContext = createContext<AuthContextType>({ 
+  session: null, 
+  user: null, 
+  profile: null, 
+  loading: true,
+  refreshProfile: async () => {}
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const initialised = useRef(false);
+
+  const refreshProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (!error && data) {
+          setProfile(data as Profile);
+        }
+      } catch (e) {
+        console.error('Profile refresh error:', e);
+      }
+    }
+  };
 
   useEffect(() => {
     // Safety timeout — if Supabase never fires INITIAL_SESSION (e.g. offline)
@@ -77,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, profile, loading }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, profile, loading, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

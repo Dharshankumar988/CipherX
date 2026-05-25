@@ -7,7 +7,7 @@ import { Save, Copy, Eye, EyeOff, RefreshCw, Camera } from 'lucide-react';
 import { generateRSAKeys } from '../lib/ciphers/rsa';
 
 export const Settings: React.FC = () => {
-  const { profile, session } = useAuth();
+  const { profile, session, refreshProfile } = useAuth();
   const [displayName, setDisplayName] = useState(profile?.display_name || '');
   const [algorithm, setAlgorithm] = useState('caesar');
   const [defaultShift, setDefaultShift] = useState('3');
@@ -80,6 +80,7 @@ export const Settings: React.FC = () => {
         rsa_private_key: rsaPrivateKey || null
       });
       
+    await refreshProfile();
     setSaving(false);
     setMessage('Settings saved successfully!');
     setTimeout(() => setMessage(''), 3000);

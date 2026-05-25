@@ -1,7 +1,8 @@
 -- Run this in your Supabase SQL Editor to update your database schema
 
--- 1. Add display_name to profiles
+-- 1. Add display_name and avatar_url to profiles
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS display_name text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url text;
 
 -- 2. Create contacts table for user-to-user approvals
 CREATE TABLE IF NOT EXISTS public.contacts (
