@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Search, UserPlus, Check, X, Send, Lock, Trash2 } from 'lucide-react';
+import { Search, UserPlus, Check, X, Send, Lock, Trash2, ArrowLeft } from 'lucide-react';
 import { EncryptionVisualizer } from '../components/EncryptionVisualizer';
 import { encryptCaesar, decryptCaesar } from '../lib/ciphers/caesar';
 import { encryptVigenere, decryptVigenere } from '../lib/ciphers/vigenere';
@@ -387,7 +387,7 @@ export const Dashboard: React.FC = () => {
     <ScreenContainer showSidebar={true} padded={false}>
       <div className="flex h-full w-full">
         {/* Sidebar */}
-        <div className="w-80 border-r border-cyber-secondary/20 flex flex-col bg-cyber-bg/50">
+        <div className={`w-full md:w-80 border-r border-cyber-secondary/20 flex-col bg-cyber-bg/50 ${activeContact ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-4 border-b border-cyber-secondary/20">
             <h2 className="text-xl font-bold text-cyber-text tracking-wide mb-4">CONTACTS</h2>
             <div className="flex space-x-2">
@@ -491,13 +491,20 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-cyber-bg relative">
+        <div className={`flex-1 flex-col bg-cyber-bg relative ${!activeContact ? 'hidden md:flex' : 'flex'}`}>
           {activeContact ? (
             <>
               {/* Chat Header */}
               <div className="h-16 border-b border-cyber-secondary/20 flex items-center px-6 bg-cyber-card/50">
                 <div className="flex items-center space-x-3">
-                  <Lock className="text-cyber-neon" size={20} />
+                  <button onClick={() => setActiveContact(null)} className="md:hidden text-cyber-neon hover:text-white mr-2">
+                    <ArrowLeft size={24} />
+                  </button>
+                  {activeContact.other_user.avatar_url ? (
+                    <img src={activeContact.other_user.avatar_url} alt="avatar" className="w-10 h-10 rounded-full object-cover border border-cyber-secondary/30 hidden md:block" />
+                  ) : (
+                    <Lock className="text-cyber-neon hidden md:block" size={20} />
+                  )}
                   <div>
                     <h2 className="text-cyber-text font-bold">{activeContact.other_user.display_name || activeContact.other_user.username}</h2>
                     <p className="text-[10px] text-cyber-neon uppercase tracking-widest">End-to-End Encrypted</p>
@@ -521,8 +528,17 @@ export const Dashboard: React.FC = () => {
                   messages.map(msg => {
                     const isMine = msg.sender_id === session?.user.id;
                     return (
-                      <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} group`}>
-                        <div className={`max-w-[70%] p-4 rounded-lg relative ${isMine ? 'bg-cyber-neon/10 border border-cyber-neon/30 text-cyber-text rounded-tr-none' : 'bg-cyber-card border border-cyber-secondary/20 text-cyber-text rounded-tl-none'}`}>
+                      <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} group items-end space-x-2 mb-2`}>
+                        {!isMine && (
+                          <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-cyber-card flex-shrink-0 border border-cyber-secondary/30 overflow-hidden flex items-center justify-center mb-1">
+                            {activeContact.other_user.avatar_url ? (
+                              <img src={activeContact.other_user.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] text-cyber-secondary font-bold">{(activeContact.other_user.display_name || activeContact.other_user.username).substring(0,2).toUpperCase()}</span>
+                            )}
+                          </div>
+                        )}
+                        <div className={`max-w-[70%] p-3 md:p-4 rounded-xl relative ${isMine ? 'bg-cyber-neon/10 border border-cyber-neon/30 text-cyber-text rounded-br-none' : 'bg-cyber-card border border-cyber-secondary/20 text-cyber-text rounded-bl-none'}`}>
                           {isMine && (
                             <button
                               onClick={() => deleteMessage(msg.id)}
@@ -538,6 +554,15 @@ export const Dashboard: React.FC = () => {
                             <span className="text-[9px] text-cyber-secondary opacity-50">{new Date(msg.created_at).toLocaleTimeString()}</span>
                           </div>
                         </div>
+                        {isMine && (
+                          <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-cyber-card flex-shrink-0 border border-cyber-neon/50 overflow-hidden flex items-center justify-center mb-1">
+                            {profile?.avatar_url ? (
+                              <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-[10px] text-cyber-neon font-bold">{(profile?.display_name || profile?.username || '?').substring(0,2).toUpperCase()}</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })

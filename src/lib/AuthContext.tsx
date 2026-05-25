@@ -123,6 +123,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!mounted) return;
       
       if (newSession?.user) {
+        setSession(newSession); // Set session first so Login/Register unmount immediately if needed
+
         if (!profileRef.current || profileRef.current.id !== newSession.user.id) {
           setLoading(true);
           try {
@@ -154,7 +156,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (mounted) setLoading(false);
           }
         }
-        setSession(newSession);
       } else {
         if (mounted) {
           setProfile(null);

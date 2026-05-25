@@ -28,8 +28,13 @@ export const Register: React.FC = () => {
   if (authLoading && !session) {
     return (
       <ScreenContainer showSidebar={false}>
-        <div className="flex-1 flex items-center justify-center text-cyber-neon">
-          Loading...
+        <div className="flex-1 flex flex-col items-center justify-center text-cyber-neon h-full">
+          <Shield className="w-16 h-16 mb-6 animate-pulse text-cyber-accent" />
+          <div className="text-xl md:text-2xl font-bold tracking-widest uppercase mb-4 text-shadow-neon">CIPHERX</div>
+          <div className="w-64 h-1 bg-cyber-bg border border-cyber-secondary/30 rounded overflow-hidden">
+            <div className="h-full bg-cyber-accent animate-[pulse_1.5s_ease-in-out_infinite] w-full origin-left scale-x-100"></div>
+          </div>
+          <div className="text-cyber-secondary text-xs mt-4 uppercase tracking-widest animate-pulse">Establishing Secure Uplink...</div>
         </div>
       </ScreenContainer>
     );
