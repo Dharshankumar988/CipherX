@@ -48,13 +48,13 @@ export const Login: React.FC = () => {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setErrorMsg(error.message);
-      } else if (data.session) {
-        // Successful login
-        navigate('/');
+        setLoading(false);
       }
+      // On success, we purposefully DO NOT call setLoading(false) or navigate manually.
+      // The button will continue spinning until AuthContext finishes fetching the profile
+      // and triggers the useEffect above to instantly transition to the Dashboard.
     } catch (err: any) {
       setErrorMsg(err?.message || 'An unexpected error occurred. Please try again.');
-    } finally {
       setLoading(false);
     }
   }

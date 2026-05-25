@@ -48,16 +48,17 @@ export const Register: React.FC = () => {
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) {
         setErrorMsg(error.message);
+        setLoading(false);
       } else {
         if (!data.session) {
           setErrorMsg('Registration successful! Please check your email to confirm your account.');
-        } else {
-          navigate('/pending');
+          setLoading(false);
         }
+        // If data.session exists, we do NOT reset loading or navigate manually.
+        // The useEffect will seamlessly handle the transition.
       }
     } catch (err: any) {
       setErrorMsg(err?.message || 'An unexpected error occurred. Please try again.');
-    } finally {
       setLoading(false);
     }
   }
