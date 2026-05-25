@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ScreenContainer } from '../components/ScreenContainer';
+import { EncryptionInfo } from '../components/EncryptionInfo';
 import { GlassCard } from '../components/GlassCard';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -280,6 +281,8 @@ export const Settings: React.FC = () => {
           </button>
           {message && <span className="text-cyber-neon text-sm">{message}</span>}
         </div>
+
+        <EncryptionInfo />
       </div>
     </ScreenContainer>
   );
