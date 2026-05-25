@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+@layer base {
+  body {
+    @apply bg-cyber-bg text-cyber-text;
+  }
+}
+
+@layer utilities {
+  .text-shadow-neon {
+    text-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
+  }
+}
