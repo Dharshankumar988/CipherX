@@ -35,10 +35,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const initialised = useRef(false);
   const profileRef = useRef<Profile | null>(null);
+  const profileChannelRef = useRef<any>(null);
 
   useEffect(() => {
     profileRef.current = profile;
   }, [profile]);
+
+  const setupProfileSubscription = (userId: string) => {
+    if (profileChannelRef.current) {
+      supabase.removeChannel(profileChannelRef.current);
+    }
+    const channel = supabase
+      .channel(`public:profiles:id=eq.${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
+        (payload) => {
+          setProfile(payload.new as Profile);
+        }
+      )
+      .subscribe();
+    profileChannelRef.current = channel;
+  };
 
   const refreshProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -60,7 +78,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
-    let profileSubscription: any = null;
 
     const initializeAuth = async () => {
       try {
@@ -76,17 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (mounted) {
             setProfile(!error && data ? (data as Profile) : null);
-
-            profileSubscription = supabase
-              .channel(`public:profiles:id=eq.${currentSession.user.id}`)
-              .on(
-                'postgres_changes',
-                { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${currentSession.user.id}` },
-                (payload) => {
-                  if (mounted) setProfile(payload.new as Profile);
-                }
-              )
-              .subscribe();
+            setupProfileSubscription(currentSession.user.id);
           }
         }
       } catch (e) {
@@ -105,11 +112,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!mounted) return;
       
       if (newSession?.user) {
-        // Only fetch profile if it's missing or a different user logged in
         if (!profileRef.current || profileRef.current.id !== newSession.user.id) {
           setLoading(true);
           try {
-            // Add retry logic because DB trigger might take a few ms
             let retries = 3;
             let profileData = null;
             
@@ -123,12 +128,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (data) {
                 profileData = data;
               } else {
-                await new Promise(r => setTimeout(r, 500)); // wait 500ms before retry
+                await new Promise(r => setTimeout(r, 500));
                 retries--;
               }
             }
 
-            if (mounted && profileData) setProfile(profileData as Profile);
+            if (mounted && profileData) {
+              setProfile(profileData as Profile);
+              setupProfileSubscription(newSession.user.id);
+            }
           } catch (e) {
             console.error('Profile fetch error:', e);
           } finally {
@@ -141,6 +149,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(null);
           setSession(null);
           setLoading(false);
+          if (profileChannelRef.current) {
+            supabase.removeChannel(profileChannelRef.current);
+            profileChannelRef.current = null;
+          }
         }
       }
     });
@@ -148,8 +160,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      if (profileSubscription) {
-        supabase.removeChannel(profileSubscription);
+      if (profileChannelRef.current) {
+        supabase.removeChannel(profileChannelRef.current);
       }
     };
   }, []);

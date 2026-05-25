@@ -64,8 +64,11 @@ export const Dashboard: React.FC = () => {
     if (session?.user.id) {
       fetchContacts();
       fetchSettings();
+      setActiveContact(null);
+      setMessages([]);
+      setConversationId(null);
     }
-  }, [session]);
+  }, [session?.user.id]);
 
   useEffect(() => {
     return () => {
@@ -152,11 +155,17 @@ export const Dashboard: React.FC = () => {
     fetchContacts();
   };
 
+  const activeContactRef = useRef<string | null>(null);
+
   // Chat logic
   useEffect(() => {
     if (activeContact && activeContact.status === 'approved') {
-      loadConversation();
+      if (activeContactRef.current !== activeContact.other_user.id) {
+        activeContactRef.current = activeContact.other_user.id;
+        loadConversation();
+      }
     } else {
+      activeContactRef.current = null;
       setMessages([]);
       setConversationId(null);
     }
