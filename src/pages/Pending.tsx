@@ -21,8 +21,16 @@ export const Pending: React.FC = () => {
   }, [session, profile, loading, navigate]);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/login', { replace: true });
+    try {
+      await supabase.auth.signOut();
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-')) localStorage.removeItem(key);
+      });
+    } catch (e) {
+      console.error('Sign out error:', e);
+    } finally {
+      window.location.replace('/login');
+    }
   };
 
   if (loading) {
