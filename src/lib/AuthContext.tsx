@@ -81,7 +81,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        // Use Promise.race to prevent deadlocks if Supabase auth locks get corrupted in the browser
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Session timeout')), 2000));
+        
+        let currentSession = null;
+        try {
+          const { data } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+          currentSession = data?.session;
+        } catch (timeoutErr) {
+          console.warn('getSession timed out or failed (possible browser lock corruption).');
+        }
+
         if (mounted) setSession(currentSession);
 
         if (currentSession?.user) {
