@@ -53,9 +53,10 @@ export const Register: React.FC = () => {
         if (!data.session) {
           setErrorMsg('Registration successful! Please check your email to confirm your account.');
           setLoading(false);
+        } else {
+          await refreshProfile();
+          navigate('/pending');
         }
-        // If data.session exists, we do NOT reset loading or navigate manually.
-        // The useEffect will seamlessly handle the transition.
       }
     } catch (err: any) {
       setErrorMsg(err?.message || 'An unexpected error occurred. Please try again.');
