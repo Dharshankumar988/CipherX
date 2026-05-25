@@ -83,21 +83,39 @@ export const Dashboard: React.FC = () => {
 
   const fetchContacts = async () => {
     if (!session?.user.id) return;
-    const { data } = await supabase
-      .from('contacts')
-      .select(`
-        id, requester_id, addressee_id, status,
-        requester:profiles!requester_id(id, email, username, display_name, rsa_public_key),
-        addressee:profiles!addressee_id(id, email, username, display_name, rsa_public_key)
-      `);
+    
+    // 1. Fetch contacts
+    const { data: contactsData } = await supabase.from('contacts').select('*');
+    if (!contactsData) return;
+    
+    // 2. Extract unique profile IDs needed
+    const profileIds = new Set<string>();
+    contactsData.forEach(c => {
+      profileIds.add(c.requester_id);
+      profileIds.add(c.addressee_id);
+    });
+    
+    // 3. Fetch related profiles
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('id, email, username, display_name, rsa_public_key')
+      .in('id', Array.from(profileIds));
       
-    if (data) {
-      const formatted = data.map((c: any) => ({
+    if (!profilesData) return;
+    
+    // 4. Map them together manually since we can't join on auth.users foreign key directly
+    const formatted = contactsData.map((c: any) => {
+      const requester = profilesData.find(p => p.id === c.requester_id);
+      const addressee = profilesData.find(p => p.id === c.addressee_id);
+      return {
         ...c,
-        other_user: c.requester_id === session.user.id ? c.addressee : c.requester
-      }));
-      setContacts(formatted);
-    }
+        requester,
+        addressee,
+        other_user: c.requester_id === session.user.id ? addressee : requester
+      };
+    }).filter((c: any) => c.requester && c.addressee);
+    
+    setContacts(formatted);
   };
 
   const handleSearch = async () => {
@@ -241,24 +259,25 @@ export const Dashboard: React.FC = () => {
     
     // Create conversation if it doesn't exist
     if (!cid) {
-      const { data: conv, error: convErr } = await supabase.from('conversations').insert({}).select().single();
-      if (convErr || !conv) {
+      const newCid = crypto.randomUUID();
+      const { error: convErr } = await supabase.from('conversations').insert({ id: newCid });
+      if (convErr) {
         console.error('Conversation creation error:', convErr);
         alert(`Failed to create conversation: ${convErr?.message || 'Unknown error'}`);
         return;
       }
-      cid = conv.id;
+      cid = newCid;
       const { error: partErr } = await supabase.from('conversation_participants').insert([
-        { conversation_id: conv.id, user_id: session.user.id },
-        { conversation_id: conv.id, user_id: activeContact.other_user.id }
+        { conversation_id: newCid, user_id: session.user.id },
+        { conversation_id: newCid, user_id: activeContact.other_user.id }
       ]);
       if (partErr) {
         console.error('Participant insert error:', partErr);
         alert(`Failed to set up conversation: ${partErr.message}`);
         return;
       }
-      setConversationId(conv.id);
-      subscribeMessages(conv.id, userSettings);
+      setConversationId(newCid);
+      subscribeMessages(newCid, userSettings);
     }
     
     if (!cid) return;
