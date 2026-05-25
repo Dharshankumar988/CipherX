@@ -59,70 +59,77 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Safety timeout — if Supabase never fires INITIAL_SESSION (e.g. offline)
-    // we stop loading after 4 seconds so the UI doesn't hang forever.
-    const safetyTimer = setTimeout(() => {
-      if (!initialised.current) {
-        console.warn('Auth init timed out — forcing loading to false.');
-        setLoading(false);
-        initialised.current = true;
-      }
-    }, 4000);
+    let mounted = true;
+    let profileSubscription: any = null;
 
-    // onAuthStateChange fires INITIAL_SESSION synchronously on mount with the
-    // stored session, then fires again on every sign-in / sign-out event.
-    // This is the single source of truth — we don't call getSession() separately.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      if (!profileRef.current) {
-        setLoading(true);
-      }
-      setSession(newSession);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (mounted) setSession(currentSession);
 
-      let profileSubscription: any = null;
-
-      if (newSession?.user) {
-        try {
+        if (currentSession?.user) {
           const { data, error } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', newSession.user.id)
+            .eq('id', currentSession.user.id)
             .single();
 
-          setProfile(!error && data ? (data as Profile) : null);
+          if (mounted) {
+            setProfile(!error && data ? (data as Profile) : null);
 
-          // Listen for real-time changes to the profile (like role/status updates)
-          profileSubscription = supabase
-            .channel(`public:profiles:id=eq.${newSession.user.id}`)
-            .on(
-              'postgres_changes',
-              { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${newSession.user.id}` },
-              (payload) => {
-                setProfile(payload.new as Profile);
-              }
-            )
-            .subscribe();
+            profileSubscription = supabase
+              .channel(`public:profiles:id=eq.${currentSession.user.id}`)
+              .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${currentSession.user.id}` },
+                (payload) => {
+                  if (mounted) setProfile(payload.new as Profile);
+                }
+              )
+              .subscribe();
+          }
+        }
+      } catch (e) {
+        console.error('Auth initialization error:', e);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          initialised.current = true;
+        }
+      }
+    };
 
-        } catch (e) {
-          console.error('Profile fetch error:', e);
-          setProfile(null);
+    initializeAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      if (!mounted) return;
+      setSession(newSession);
+
+      if (newSession?.user) {
+        // Only fetch profile if it's missing or a different user logged in
+        if (!profileRef.current || profileRef.current.id !== newSession.user.id) {
+          try {
+            const { data } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', newSession.user.id)
+              .single();
+            if (mounted && data) setProfile(data as Profile);
+          } catch (e) {
+            console.error('Profile fetch error:', e);
+          }
         }
       } else {
-        setProfile(null);
+        if (mounted) setProfile(null);
       }
-
-      setLoading(false);
-      initialised.current = true;
-      
-      return () => {
-        if (profileSubscription) {
-          supabase.removeChannel(profileSubscription);
-        }
-      };
     });
 
     return () => {
-      clearTimeout(safetyTimer);
+      mounted = false;
       subscription.unsubscribe();
+      if (profileSubscription) {
+        supabase.removeChannel(profileSubscription);
+      }
     };
   }, []);
 
