@@ -45,7 +45,25 @@ export const Login: React.FC = () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      let loginEmail = email.trim();
+
+      // If it doesn't look like an email (doesn't contain '@'), try to resolve username
+      if (!loginEmail.includes('@')) {
+        const { data, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', loginEmail)
+          .maybeSingle();
+
+        if (profileError || !data || !data.email) {
+          setErrorMsg('Username not found. Please enter a valid email or username.');
+          setLoading(false);
+          return;
+        }
+        loginEmail = data.email;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
       if (error) {
         setErrorMsg(error.message);
         setLoading(false);
@@ -78,13 +96,13 @@ export const Login: React.FC = () => {
 
             <form onSubmit={signInWithEmail} className="flex flex-col space-y-4">
               <div>
-                <label className="block text-cyber-secondary text-xs font-bold mb-2 ml-1 uppercase tracking-wider">Email Address</label>
+                <label className="block text-cyber-secondary text-xs font-bold mb-2 ml-1 uppercase tracking-wider">Email or Username</label>
                 <input
-                  type="email"
+                  type="text"
                   className="w-full bg-cyber-bg border border-cyber-secondary/20 text-cyber-text p-4 rounded-xl focus:border-cyber-accent focus:outline-none transition-colors"
                   onChange={e => setEmail(e.target.value)}
                   value={email}
-                  placeholder="email@address.com"
+                  placeholder="email@address.com or username"
                   required
                 />
               </div>
