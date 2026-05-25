@@ -14,7 +14,7 @@ drop function if exists public.is_conversation_participant cascade;
 
 -- 1. Profiles table
 create table public.profiles (
-  id uuid references auth.users not null primary key,
+  id uuid references auth.users on delete cascade not null primary key,
   email text,
   username text unique,
   display_name text,
@@ -27,7 +27,7 @@ create table public.profiles (
 
 -- 2. User Settings table (Includes rsa_private_key)
 create table public.user_settings (
-  user_id uuid references auth.users not null primary key,
+  user_id uuid references auth.users on delete cascade not null primary key,
   default_algorithm text default 'caesar',
   default_shift text default '3',
   show_visualization boolean default true,
@@ -40,8 +40,8 @@ create table public.user_settings (
 -- 3. Contacts table
 create table public.contacts (
   id uuid default gen_random_uuid() primary key,
-  requester_id uuid references auth.users not null,
-  addressee_id uuid references auth.users not null,
+  requester_id uuid references auth.users on delete cascade not null,
+  addressee_id uuid references auth.users on delete cascade not null,
   status text default 'pending' check (status in ('pending', 'approved', 'rejected')),
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   unique (requester_id, addressee_id)
@@ -64,7 +64,7 @@ create table public.conversation_participants (
 create table public.messages (
   id uuid default gen_random_uuid() primary key,
   conversation_id uuid references public.conversations on delete cascade,
-  sender_id uuid references auth.users not null,
+  sender_id uuid references auth.users on delete cascade not null,
   ciphertext text not null,
   algorithm_used text not null,
   shift_key text,
