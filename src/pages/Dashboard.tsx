@@ -101,7 +101,7 @@ export const Dashboard: React.FC = () => {
     // 3. Fetch related profiles
     const { data: profilesData } = await supabase
       .from('profiles')
-      .select('id, email, username, display_name, rsa_public_key')
+      .select('id, email, username, display_name, avatar_url, rsa_public_key')
       .in('id', Array.from(profileIds));
       
     if (!profilesData) return;
