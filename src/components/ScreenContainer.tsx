@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, Settings, LogOut, ShieldAlert, User } from 'lucide-react';
+import { MessageSquare, Settings, LogOut, ShieldAlert } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
