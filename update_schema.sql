@@ -47,3 +47,20 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 
 -- 7. Also enable Realtime on contacts so pending requests appear live
 ALTER PUBLICATION supabase_realtime ADD TABLE public.contacts;
+
+-- 8. Fix infinite recursion in conversation_participants policy
+CREATE OR REPLACE FUNCTION public.is_conversation_participant(co_id uuid, u_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.conversation_participants
+    WHERE conversation_id = co_id AND user_id = u_id
+  );
+$$;
+
+DROP POLICY IF EXISTS "Users can view participants in their conversations" ON public.conversation_participants;
+CREATE POLICY "Users can view participants in their conversations" ON public.conversation_participants
+  FOR SELECT USING (public.is_conversation_participant(conversation_id, auth.uid()));
+

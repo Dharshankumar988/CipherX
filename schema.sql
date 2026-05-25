@@ -112,11 +112,19 @@ create policy "Users can view conversations they are in" on public.conversations
 );
 create policy "Users can insert conversations" on public.conversations for insert with check (true);
 
+create or replace function public.is_conversation_participant(co_id uuid, u_id uuid)
+returns boolean
+language sql
+security definer
+as $$
+  select exists (
+    select 1 from public.conversation_participants
+    where conversation_id = co_id and user_id = u_id
+  );
+$$;
+
 create policy "Users can view participants in their conversations" on public.conversation_participants for select using (
-  exists (
-    select 1 from public.conversation_participants cp
-    where cp.conversation_id = conversation_participants.conversation_id and cp.user_id = auth.uid()
-  )
+  public.is_conversation_participant(conversation_id, auth.uid())
 );
 create policy "Users can insert participants" on public.conversation_participants for insert with check (true);
 
