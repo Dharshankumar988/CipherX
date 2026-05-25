@@ -45,7 +45,7 @@ export const Login: React.FC = () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setErrorMsg(error.message);
         setLoading(false);
