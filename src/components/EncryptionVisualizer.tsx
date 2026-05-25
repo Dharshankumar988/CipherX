@@ -7,6 +7,7 @@ export interface VisualizerProps {
   originalText: string;
   processedText: string;
   isEncrypting: boolean;
+  cipherKey?: string;
 }
 
 export const EncryptionVisualizer: React.FC<VisualizerProps> = ({
@@ -14,7 +15,8 @@ export const EncryptionVisualizer: React.FC<VisualizerProps> = ({
   algorithm,
   originalText,
   processedText,
-  isEncrypting
+  isEncrypting,
+  cipherKey
 }) => {
   const [displayText, setDisplayText] = useState('');
   const [progress, setProgress] = useState(0);
@@ -75,7 +77,14 @@ export const EncryptionVisualizer: React.FC<VisualizerProps> = ({
             {isEncrypting ? 'Encrypting' : 'Decrypting'}
           </span>
         </div>
-        <span className="text-xs text-cyber-accent font-mono">{algorithm}</span>
+        <div className="flex flex-col items-end">
+          <span className="text-xs text-cyber-accent font-mono">{algorithm}</span>
+          {cipherKey && (
+            <span className="text-[9px] text-cyber-secondary font-mono truncate max-w-[120px]" title={cipherKey}>
+              KEY: {cipherKey.length > 15 ? cipherKey.substring(0, 15) + '...' : cipherKey}
+            </span>
+          )}
+        </div>
       </div>
       
       <div className="p-4 space-y-4">

@@ -57,6 +57,8 @@ export const Dashboard: React.FC = () => {
   const [visEncrypting, setVisEncrypting] = useState(true);
   const [visOrig, setVisOrig] = useState('');
   const [visProc, setVisProc] = useState('');
+  const [visKey, setVisKey] = useState('');
+  const [visAlgo, setVisAlgo] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
 
@@ -238,6 +240,12 @@ export const Dashboard: React.FC = () => {
           }
           setVisOrig(visOrigText);
           setVisProc(plaintext);
+          
+          let k = msg.shift_key;
+          if (msg.algorithm_used === 'rsa') k = '[Private RSA Key]';
+          setVisKey(k || '');
+          setVisAlgo(msg.algorithm_used || 'caesar');
+          
           setVisEncrypting(false);
           setVisActive(true);
           setTimeout(() => setVisActive(false), 2000);
@@ -338,8 +346,11 @@ export const Dashboard: React.FC = () => {
           const parsed = JSON.parse(ciphertext);
           visProcText = parsed.recipient.substring(0, 40) + '...';
         } catch {}
+        k = '[Public RSA Key]';
       }
       setVisProc(visProcText);
+      setVisKey(k || '');
+      setVisAlgo(algo);
       setVisEncrypting(true);
       setVisActive(true);
       setTimeout(() => setVisActive(false), 2000);
@@ -602,10 +613,11 @@ export const Dashboard: React.FC = () => {
       {/* Global Animation Overlay */}
       <EncryptionVisualizer 
         isActive={visActive} 
-        algorithm={userSettings?.default_algorithm || 'caesar'}
+        algorithm={visAlgo || userSettings?.default_algorithm || 'caesar'}
         originalText={visOrig}
         processedText={visProc}
         isEncrypting={visEncrypting}
+        cipherKey={visKey}
       />
     </ScreenContainer>
   );
