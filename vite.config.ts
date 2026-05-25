@@ -9,12 +9,18 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
+        id: '/',
         name: 'CipherX',
         short_name: 'CipherX',
         description: 'Secure Encrypted Communications',
         theme_color: '#0A0D10',
         background_color: '#0A0D10',
         display: 'standalone',
+        orientation: 'portrait',
+        dir: 'ltr',
+        lang: 'en-US',
+        start_url: '/',
+        scope: '/',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -28,19 +34,30 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ],
-        categories: ['communication', 'social'],
+        categories: ['communication', 'social', 'utilities'],
+        shortcuts: [
+          {
+            name: 'Open Chat',
+            short_name: 'Chat',
+            description: 'Open Secure Chat',
+            url: '/',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }]
+          }
+        ],
         screenshots: [
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            form_factor: 'wide'
+            form_factor: 'wide',
+            label: 'Desktop View'
           },
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            form_factor: 'narrow'
+            form_factor: 'narrow',
+            label: 'Mobile View'
           }
         ]
       }
