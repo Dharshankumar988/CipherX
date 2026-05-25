@@ -44,8 +44,6 @@ export const Register: React.FC = () => {
       if (error) {
         setErrorMsg(error.message);
         setLoading(false);
-      } else {
-        navigate('/pending');
       }
     } catch (err: any) {
       setErrorMsg(err?.message || 'An unexpected error occurred. Please try again.');

@@ -44,8 +44,6 @@ export const Login: React.FC = () => {
       if (error) {
         setErrorMsg(error.message);
         setLoading(false);
-      } else {
-        navigate('/');
       }
     } catch (err: any) {
       setErrorMsg(err?.message || 'An unexpected error occurred. Please try again.');

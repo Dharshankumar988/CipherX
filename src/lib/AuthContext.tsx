@@ -78,6 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       setSession(newSession);
 
+      let profileSubscription: any = null;
+
       if (newSession?.user) {
         try {
           const { data, error } = await supabase
@@ -87,6 +89,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .single();
 
           setProfile(!error && data ? (data as Profile) : null);
+
+          // Listen for real-time changes to the profile (like role/status updates)
+          profileSubscription = supabase
+            .channel(`public:profiles:id=eq.${newSession.user.id}`)
+            .on(
+              'postgres_changes',
+              { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${newSession.user.id}` },
+              (payload) => {
+                setProfile(payload.new as Profile);
+              }
+            )
+            .subscribe();
+
         } catch (e) {
           console.error('Profile fetch error:', e);
           setProfile(null);
@@ -97,6 +112,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setLoading(false);
       initialised.current = true;
+      
+      return () => {
+        if (profileSubscription) {
+          supabase.removeChannel(profileSubscription);
+        }
+      };
     });
 
     return () => {
