@@ -341,6 +341,7 @@ export const Dashboard: React.FC = () => {
     if (userSettings?.show_visualization) {
       setVisOrig(inputText);
       let visProcText = ciphertext;
+      let k = shift;
       if (algo === 'rsa') {
         try {
           const parsed = JSON.parse(ciphertext);
