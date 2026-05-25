@@ -455,7 +455,14 @@ export const Dashboard: React.FC = () => {
                 <div className="space-y-2">
                   {contacts.filter(c => c.status === 'pending' && c.addressee_id === session?.user.id).map(c => (
                     <div key={c.id} className="bg-cyber-card p-3 rounded flex justify-between items-center border border-yellow-500/30">
-                      <div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-full bg-cyber-bg flex-shrink-0 border border-yellow-500/40 overflow-hidden flex items-center justify-center">
+                          {c.other_user.avatar_url ? (
+                            <img src={c.other_user.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] text-yellow-500 font-bold">{(c.other_user.display_name || c.other_user.username).substring(0,2).toUpperCase()}</span>
+                          )}
+                        </div>
                         <p className="text-sm text-cyber-text font-bold">{c.other_user.display_name || c.other_user.username}</p>
                       </div>
                       <div className="flex space-x-2">
@@ -476,10 +483,19 @@ export const Dashboard: React.FC = () => {
                   <button 
                     key={c.id}
                     onClick={() => setActiveContact(c)}
-                    className={`w-full text-left p-3 rounded transition-colors ${activeContact?.id === c.id ? 'bg-cyber-neon/10 border-l-2 border-cyber-neon' : 'hover:bg-cyber-secondary/10'}`}
+                    className={`w-full text-left p-3 rounded transition-colors flex items-center space-x-3 ${activeContact?.id === c.id ? 'bg-cyber-neon/10 border-l-2 border-cyber-neon' : 'hover:bg-cyber-secondary/10'}`}
                   >
-                    <p className="text-sm font-bold text-cyber-text">{c.other_user.display_name || c.other_user.username}</p>
-                    <p className="text-xs text-cyber-secondary truncate">Secure channel active</p>
+                    <div className="w-9 h-9 rounded-full bg-cyber-card flex-shrink-0 border border-cyber-secondary/30 overflow-hidden flex items-center justify-center">
+                      {c.other_user.avatar_url ? (
+                        <img src={c.other_user.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs text-cyber-neon font-bold">{(c.other_user.display_name || c.other_user.username).substring(0,2).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-cyber-text truncate">{c.other_user.display_name || c.other_user.username}</p>
+                      <p className="text-xs text-cyber-secondary truncate">Secure channel active</p>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -492,7 +508,16 @@ export const Dashboard: React.FC = () => {
                 <div className="space-y-2">
                   {contacts.filter(c => c.status === 'pending' && c.requester_id === session?.user.id).map(c => (
                     <div key={c.id} className="bg-cyber-card p-2 rounded flex justify-between items-center">
-                      <p className="text-xs text-cyber-secondary">{c.other_user.display_name || c.other_user.username}</p>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-cyber-bg flex-shrink-0 border border-cyber-secondary/30 overflow-hidden flex items-center justify-center">
+                          {c.other_user.avatar_url ? (
+                            <img src={c.other_user.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[8px] text-cyber-secondary font-bold">{(c.other_user.display_name || c.other_user.username).substring(0,2).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-cyber-secondary">{c.other_user.display_name || c.other_user.username}</p>
+                      </div>
                       <span className="text-[10px] text-yellow-500 uppercase">Waiting</span>
                     </div>
                   ))}
