@@ -25,7 +25,7 @@ export const Register: React.FC = () => {
     }
   }, [session, profile, authLoading, navigate]);
 
-  if (authLoading) {
+  if (authLoading && !session) {
     return (
       <ScreenContainer showSidebar={false}>
         <div className="flex-1 flex items-center justify-center text-cyber-neon">
@@ -43,13 +43,11 @@ export const Register: React.FC = () => {
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
         setErrorMsg(error.message);
-      } else {
-        // Typically goes to pending since default status is pending
-        navigate('/pending');
+        setLoading(false);
       }
+      // On success, useEffect will handle redirection, and we leave loading=true
     } catch (err: any) {
       setErrorMsg(err?.message || 'An unexpected error occurred. Please try again.');
-    } finally {
       setLoading(false);
     }
   }

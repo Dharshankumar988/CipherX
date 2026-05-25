@@ -25,7 +25,7 @@ export const Login: React.FC = () => {
     }
   }, [session, profile, authLoading, navigate]);
 
-  if (authLoading) {
+  if (authLoading && !session) {
     return (
       <ScreenContainer showSidebar={false}>
         <div className="flex-1 flex items-center justify-center text-cyber-neon">
@@ -43,12 +43,11 @@ export const Login: React.FC = () => {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setErrorMsg(error.message);
-      } else {
-        navigate('/');
+        setLoading(false);
       }
+      // On success, useEffect will handle redirection, and we leave loading=true
     } catch (err: any) {
       setErrorMsg(err?.message || 'An unexpected error occurred. Please try again.');
-    } finally {
       setLoading(false);
     }
   }
