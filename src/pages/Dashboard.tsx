@@ -41,13 +41,13 @@ type Contact = {
 export const Dashboard: React.FC = () => {
   const { session, profile } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [searchEmail, setSearchEmail] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [activeContact, setActiveContact] = useState<Contact | null>(null);
   
   const [messages, setMessages] = useState<any[]>([]);
-  const [inputText, setInputText] = useState('');
+  const chatInputRef = useRef<HTMLInputElement>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   
   const [userSettings, setUserSettings] = useState<any>(null);
@@ -101,6 +101,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleSearch = async () => {
+    const searchEmail = searchInputRef.current?.value || '';
     if (!searchEmail.trim() || !session?.user.id) return;
     const { data, error } = await supabase
       .from('profiles')
@@ -231,7 +232,10 @@ export const Dashboard: React.FC = () => {
   };
 
   const sendMessage = async () => {
+    const inputText = chatInputRef.current?.value || '';
     if (!inputText.trim() || !activeContact || !session?.user.id) return;
+    
+    if (chatInputRef.current) chatInputRef.current.value = '';
     
     let cid = conversationId;
     
@@ -338,7 +342,7 @@ export const Dashboard: React.FC = () => {
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
 
-    setInputText('');
+    if (chatInputRef.current) chatInputRef.current.value = '';
   };
 
   const deleteMessage = async (msgId: string) => {
@@ -361,17 +365,10 @@ export const Dashboard: React.FC = () => {
             <div className="flex space-x-2">
               <input 
                 type="text" 
-                placeholder="Search name or email..." 
-                className="flex-1 bg-cyber-card border border-cyber-secondary/30 rounded p-2 text-sm text-cyber-text focus:outline-none focus:border-cyber-neon"
-                value={searchEmail}
-                onChange={e => {
-                  setSearchEmail(e.target.value);
-                  if (!e.target.value.trim()) {
-                    setSearchResults([]);
-                    setHasSearched(false);
-                  }
-                }}
-                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                className="w-full bg-cyber-bg border border-cyber-secondary/30 text-cyber-text pl-10 p-2 rounded focus:border-cyber-accent focus:outline-none text-sm"
+                placeholder="Search username or email..."
+                ref={searchInputRef}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
               <button onClick={handleSearch} className="bg-cyber-secondary/20 p-2 rounded text-cyber-text hover:text-cyber-neon"><Search size={18}/></button>
             </div>
@@ -525,15 +522,13 @@ export const Dashboard: React.FC = () => {
                 <div className="flex items-center space-x-4">
                   <input 
                     type="text"
-                    disabled={activeContact.status !== 'approved'}
-                    className="flex-1 bg-cyber-bg border border-cyber-secondary/30 rounded-lg p-4 text-cyber-text focus:outline-none focus:border-cyber-neon disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder={activeContact.status === 'approved' ? "Enter securely encrypted message..." : "Channel pending approval..."}
-                    value={inputText}
-                    onChange={e => setInputText(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && sendMessage()}
+                    className="flex-1 bg-cyber-bg border border-cyber-secondary/30 text-cyber-text p-4 rounded-xl focus:border-cyber-accent focus:outline-none transition-colors"
+                    placeholder="Enter secure transmission..."
+                    ref={chatInputRef}
+                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                   />
                   <button 
-                    disabled={activeContact.status !== 'approved' || !inputText.trim()}
+                    disabled={activeContact.status !== 'approved'}
                     onClick={sendMessage}
                     className="bg-cyber-neon text-cyber-bg p-4 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
