@@ -34,7 +34,7 @@ export const Settings: React.FC = () => {
           if (data) {
             setAlgorithm(data.default_algorithm || 'caesar');
             setDefaultShift(data.default_shift || '3');
-            setShowVisualization(data.show_visualization ?? true);
+            setShowVisualization(data.show_visualization ?? false);
             setRsaPrivateKey(data.rsa_private_key || '');
           }
         });

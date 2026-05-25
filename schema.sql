@@ -30,7 +30,7 @@ create table public.user_settings (
   user_id uuid references auth.users on delete cascade not null primary key,
   default_algorithm text default 'caesar',
   default_shift text default '3',
-  show_visualization boolean default true,
+  show_visualization boolean default false,
   quick_visualization boolean default true,
   show_advanced_dashboard boolean default true,
   theme text default 'cyber',
