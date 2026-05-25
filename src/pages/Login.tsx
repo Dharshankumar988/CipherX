@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../lib/AuthContext';
 import { GlassCard } from '../components/GlassCard';
 import { NeonButton } from '../components/NeonButton';
 import { ScreenContainer } from '../components/ScreenContainer';
@@ -12,6 +13,27 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
+  const { session, profile, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && session) {
+      if (profile?.status === 'pending') {
+        navigate('/pending', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    }
+  }, [session, profile, authLoading, navigate]);
+
+  if (authLoading) {
+    return (
+      <ScreenContainer showSidebar={false}>
+        <div className="flex-1 flex items-center justify-center text-cyber-neon">
+          Loading...
+        </div>
+      </ScreenContainer>
+    );
+  }
 
   async function signInWithEmail(e: React.FormEvent) {
     e.preventDefault();
