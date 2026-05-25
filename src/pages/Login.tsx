@@ -44,8 +44,9 @@ export const Login: React.FC = () => {
       if (error) {
         setErrorMsg(error.message);
         setLoading(false);
+      } else {
+        navigate('/');
       }
-      // On success, useEffect will handle redirection, and we leave loading=true
     } catch (err: any) {
       setErrorMsg(err?.message || 'An unexpected error occurred. Please try again.');
       setLoading(false);
