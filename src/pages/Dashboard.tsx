@@ -120,7 +120,18 @@ export const Dashboard: React.FC = () => {
       };
     }).filter((c: any) => c.requester && c.addressee);
     
-    setContacts(formatted);
+    // 5. Deduplicate: if both users sent requests to each other, keep only
+    //    the approved one (or the first one if neither is approved).
+    const seen = new Map<string, any>();
+    for (const c of formatted) {
+      const otherId = c.other_user.id;
+      const existing = seen.get(otherId);
+      if (!existing || (c.status === 'approved' && existing.status !== 'approved')) {
+        seen.set(otherId, c);
+      }
+    }
+    
+    setContacts(Array.from(seen.values()));
   };
 
   const handleSearch = async () => {
