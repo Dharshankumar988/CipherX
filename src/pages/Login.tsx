@@ -19,7 +19,7 @@ export const Login: React.FC = () => {
     if (!authLoading && session) {
       if (profile?.status === 'pending') {
         navigate('/pending', { replace: true });
-      } else {
+      } else if (profile) {
         navigate('/', { replace: true });
       }
     }

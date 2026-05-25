@@ -12,7 +12,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; requireAdmin?: boole
   const { session, profile, loading } = useAuth();
 
   if (loading) return <div className="flex-1 bg-cyber-bg flex items-center justify-center text-cyber-neon">Loading...</div>;
-  if (!session) return <Navigate to="/login" replace />;
+  if (!session || !profile) return <Navigate to="/login" replace />;
   if (profile?.status === 'pending') return <Navigate to="/pending" replace />;
   if (requireAdmin && profile?.role !== 'admin') return <Navigate to="/" replace />;
 
