@@ -40,13 +40,19 @@ export const Register: React.FC = () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) {
         setErrorMsg(error.message);
-        setLoading(false);
+      } else {
+        if (!data.session) {
+          setErrorMsg('Registration successful! Please check your email to confirm your account.');
+        } else {
+          navigate('/pending');
+        }
       }
     } catch (err: any) {
       setErrorMsg(err?.message || 'An unexpected error occurred. Please try again.');
+    } finally {
       setLoading(false);
     }
   }

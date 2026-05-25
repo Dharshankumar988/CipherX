@@ -103,24 +103,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       if (!mounted) return;
-      setSession(newSession);
-
+      
       if (newSession?.user) {
         // Only fetch profile if it's missing or a different user logged in
         if (!profileRef.current || profileRef.current.id !== newSession.user.id) {
+          setLoading(true);
           try {
-            const { data } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', newSession.user.id)
-              .single();
-            if (mounted && data) setProfile(data as Profile);
+            // Add retry logic because DB trigger might take a few ms
+            let retries = 3;
+            let profileData = null;
+            
+            while (retries > 0 && !profileData) {
+              const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', newSession.user.id)
+                .single();
+                
+              if (data) {
+                profileData = data;
+              } else {
+                await new Promise(r => setTimeout(r, 500)); // wait 500ms before retry
+                retries--;
+              }
+            }
+
+            if (mounted && profileData) setProfile(profileData as Profile);
           } catch (e) {
             console.error('Profile fetch error:', e);
+          } finally {
+            if (mounted) setLoading(false);
           }
         }
+        setSession(newSession);
       } else {
-        if (mounted) setProfile(null);
+        if (mounted) {
+          setProfile(null);
+          setSession(null);
+          setLoading(false);
+        }
       }
     });
 

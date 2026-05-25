@@ -40,13 +40,16 @@ export const Login: React.FC = () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setErrorMsg(error.message);
-        setLoading(false);
+      } else if (data.session) {
+        // Successful login
+        navigate('/');
       }
     } catch (err: any) {
       setErrorMsg(err?.message || 'An unexpected error occurred. Please try again.');
+    } finally {
       setLoading(false);
     }
   }
