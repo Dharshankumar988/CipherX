@@ -81,29 +81,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
-        // Use Promise.race to prevent deadlocks if Supabase auth locks get corrupted in the browser
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Session timeout')), 2000));
-        
-        let currentSession = null;
-        try {
-          const { data } = await Promise.race([sessionPromise, timeoutPromise]) as any;
-          currentSession = data?.session;
-        } catch (timeoutErr) {
-          console.warn('getSession timed out or failed (possible browser lock corruption).');
-        }
+        // Since we disabled navigator.locks in supabase.ts, getSession won't deadlock
+        const { data } = await supabase.auth.getSession();
+        const currentSession = data?.session ?? null;
 
         if (mounted) setSession(currentSession);
 
         if (currentSession?.user) {
-          const { data, error } = await supabase
+          const { data: profileData, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', currentSession.user.id)
             .single();
 
           if (mounted) {
-            setProfile(!error && data ? (data as Profile) : null);
+            setProfile(!error && profileData ? (profileData as Profile) : null);
             setupProfileSubscription(currentSession.user.id);
           }
         }
@@ -128,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!profileRef.current || profileRef.current.id !== newSession.user.id) {
           setLoading(true);
           try {
-            let retries = 3;
+            let retries = 2;
             let profileData = null;
             
             while (retries > 0 && !profileData) {
@@ -141,7 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (data) {
                 profileData = data;
               } else {
-                await new Promise(r => setTimeout(r, 500));
+                await new Promise(r => setTimeout(r, 300));
                 retries--;
               }
             }
