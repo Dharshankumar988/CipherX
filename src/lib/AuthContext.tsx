@@ -68,7 +68,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // stored session, then fires again on every sign-in / sign-out event.
     // This is the single source of truth — we don't call getSession() separately.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      setLoading(true);
+      if (!profile) {
+        setLoading(true);
+      }
       setSession(newSession);
 
       if (newSession?.user) {
