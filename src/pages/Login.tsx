@@ -13,7 +13,7 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
-  const { session, profile, loading: authLoading } = useAuth();
+  const { session, profile, loading: authLoading, refreshProfile } = useAuth();
 
   useEffect(() => {
     if (!authLoading && session) {
