@@ -47,9 +47,6 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({ children, padd
                 <span>{getInitials()}</span>
               )}
             </button>
-            <span className="hidden md:block text-[9px] text-cyber-secondary text-center w-full truncate px-1 -mt-4 mb-1">
-              {profile?.display_name || profile?.username || ''}
-            </span>
 
             {profile?.role === 'admin' && (
               <button onClick={() => navigate('/admin')} className={`flex justify-center py-2 px-3 md:px-0 md:w-full ${location.pathname === '/admin' ? 'border-b-2 md:border-b-0 md:border-l-2 border-cyber-accent text-cyber-neon' : 'text-cyber-secondary hover:text-cyber-text'}`}>
