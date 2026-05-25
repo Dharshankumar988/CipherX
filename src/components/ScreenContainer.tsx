@@ -15,12 +15,13 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({ children, padd
   const location = useLocation();
   const { profile } = useAuth();
 
-  const handleLogout = () => {
-    supabase.auth.signOut().catch(() => {});
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('sb-')) localStorage.removeItem(key);
-    });
-    window.location.replace('/login');
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/login');
+    } catch (e) {
+      console.error('Logout error:', e);
+    }
   };
 
   // Get initials from display_name or username

@@ -23,13 +23,9 @@ export const Pending: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('sb-')) localStorage.removeItem(key);
-      });
+      navigate('/login');
     } catch (e) {
       console.error('Sign out error:', e);
-    } finally {
-      window.location.replace('/login');
     }
   };
 
