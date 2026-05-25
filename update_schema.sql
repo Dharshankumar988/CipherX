@@ -65,3 +65,8 @@ DROP POLICY IF EXISTS "Users can view participants in their conversations" ON pu
 CREATE POLICY "Users can view participants in their conversations" ON public.conversation_participants
   FOR SELECT USING (public.is_conversation_participant(conversation_id, auth.uid()));
 
+-- 9. Add insert policy for user_settings to allow UPSERT
+DROP POLICY IF EXISTS "Users can insert own settings" ON public.user_settings;
+CREATE POLICY "Users can insert own settings" ON public.user_settings
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+

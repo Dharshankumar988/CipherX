@@ -63,27 +63,37 @@ export const Settings: React.FC = () => {
     setSaving(true);
     setMessage('');
     
-    // Update profile
-    await supabase.from('profiles').update({ 
-      display_name: displayName,
-      rsa_public_key: rsaPublicKey || null,
-      avatar_url: avatarUrl || null
-    }).eq('id', session.user.id);
-    
-    // Update settings
-    await supabase.from('user_settings')
-      .upsert({ 
-        user_id: session.user.id, 
-        default_algorithm: algorithm,
-        default_shift: defaultShift,
-        show_visualization: showVisualization,
-        rsa_private_key: rsaPrivateKey || null
-      });
+    try {
+      // Update profile
+      const { error: profileError } = await supabase.from('profiles').update({ 
+        display_name: displayName,
+        rsa_public_key: rsaPublicKey || null,
+        avatar_url: avatarUrl || null
+      }).eq('id', session.user.id);
       
-    await refreshProfile();
-    setSaving(false);
-    setMessage('Settings saved successfully!');
-    setTimeout(() => setMessage(''), 3000);
+      if (profileError) throw new Error(profileError.message);
+      
+      // Update settings
+      const { error: settingsError } = await supabase.from('user_settings')
+        .upsert({ 
+          user_id: session.user.id, 
+          default_algorithm: algorithm,
+          default_shift: defaultShift,
+          show_visualization: showVisualization,
+          rsa_private_key: rsaPrivateKey || null
+        });
+        
+      if (settingsError) throw new Error(settingsError.message);
+        
+      await refreshProfile();
+      setMessage('Settings saved successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err: any) {
+      console.error('Error saving settings:', err);
+      setMessage(err?.message || 'Failed to save settings.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
