@@ -171,7 +171,6 @@ export const Settings: React.FC = () => {
                 onChange={(e) => setAlgorithm(e.target.value)}
               >
                 <option value="caesar">Caesar Cipher</option>
-                <option value="vigenere">Vigenère Cipher</option>
                 <option value="aes">AES-256</option>
                 <option value="rsa">RSA (Asymmetric)</option>
               </select>

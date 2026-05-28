@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase';
 import { Search, UserPlus, Check, X, Send, Lock, Trash2, ArrowLeft } from 'lucide-react';
 import { EncryptionVisualizer } from '../components/EncryptionVisualizer';
 import { encryptCaesar, decryptCaesar } from '../lib/ciphers/caesar';
-import { encryptVigenere, decryptVigenere } from '../lib/ciphers/vigenere';
 import { encryptAES, decryptAES } from '../lib/ciphers/aes';
 import { encryptRSA, decryptRSA } from '../lib/ciphers/rsa';
 
@@ -13,7 +12,6 @@ const decryptMessage = (msg: any, currentUserId: string, myPrivateKey?: string) 
   const algo = msg.algorithm_used;
   const key = msg.shift_key;
   if (algo === 'caesar') return decryptCaesar(msg.ciphertext, parseInt(key) || 3);
-  if (algo === 'vigenere') return decryptVigenere(msg.ciphertext, key || 'KEY');
   if (algo === 'aes') return decryptAES(msg.ciphertext, key || 'secret');
   if (algo === 'rsa') {
     if (!myPrivateKey) return '[RSA Decryption Failed: No private key found. Generate RSA keys in Settings]';
@@ -316,8 +314,6 @@ export const Dashboard: React.FC = () => {
     let ciphertext = '';
     if (algo === 'caesar') {
       ciphertext = encryptCaesar(inputText, parseInt(shift) || 3);
-    } else if (algo === 'vigenere') {
-      ciphertext = encryptVigenere(inputText, shift || 'KEY');
     } else if (algo === 'aes') {
       ciphertext = encryptAES(inputText, shift || 'secret');
     } else if (algo === 'rsa') {

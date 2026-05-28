@@ -26,21 +26,6 @@ export const EncryptionInfo: React.FC = () => {
         </div>
 
         <div className="flex gap-4 items-start">
-          <div className="bg-cyber-secondary/10 p-3 rounded-lg text-cyber-accent">
-            <Fingerprint className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="text-lg font-bold text-cyber-text mb-1">Vigenère Cipher</h4>
-            <p className="text-sm text-cyber-secondary mb-2">
-              A polyalphabetic cipher that uses a keyword to shift letters variably.
-            </p>
-            <div className="text-xs bg-cyber-bg border border-cyber-secondary/30 p-2 rounded text-cyber-text/80">
-              <strong>How to use:</strong> Provide a word (e.g., "SECRET") as the key. Each letter of your message is shifted based on the corresponding letter of the key.
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-4 items-start">
           <div className="bg-cyber-secondary/10 p-3 rounded-lg text-cyber-neon">
             <Lock className="w-6 h-6" />
           </div>
