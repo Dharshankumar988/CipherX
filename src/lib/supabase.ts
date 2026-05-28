@@ -13,29 +13,55 @@ const isPWA = () => {
   );
 };
 
-const customStorage = {
+// In-memory fallback to avoid errors when storage is disabled (e.g. private browsing or strict mobile webviews)
+const memoryStorage = new Map<string, string>();
+
+const safeStorage = {
   getItem: (key: string) => {
-    return isPWA() ? window.localStorage.getItem(key) : window.sessionStorage.getItem(key);
+    try {
+      if (typeof window !== 'undefined') {
+        return isPWA() ? window.localStorage.getItem(key) : window.sessionStorage.getItem(key);
+      }
+    } catch (e) {
+      console.warn('Storage error, falling back to memory storage', e);
+    }
+    return memoryStorage.get(key) || null;
   },
   setItem: (key: string, value: string) => {
-    if (isPWA()) {
-      window.localStorage.setItem(key, value);
-    } else {
-      window.sessionStorage.setItem(key, value);
+    try {
+      if (typeof window !== 'undefined') {
+        if (isPWA()) {
+          window.localStorage.setItem(key, value);
+        } else {
+          window.sessionStorage.setItem(key, value);
+        }
+        return;
+      }
+    } catch (e) {
+      console.warn('Storage error, falling back to memory storage', e);
     }
+    memoryStorage.set(key, value);
   },
   removeItem: (key: string) => {
-    if (isPWA()) {
-      window.localStorage.removeItem(key);
-    } else {
-      window.sessionStorage.removeItem(key);
+    try {
+      if (typeof window !== 'undefined') {
+        if (isPWA()) {
+          window.localStorage.removeItem(key);
+        } else {
+          window.sessionStorage.removeItem(key);
+        }
+        return;
+      }
+    } catch (e) {
+      console.warn('Storage error, falling back to memory storage', e);
     }
+    memoryStorage.delete(key);
   }
 };
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: customStorage,
+    storage: safeStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
