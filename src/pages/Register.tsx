@@ -13,7 +13,7 @@ export const Register: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
-  const { session, profile, loading: authLoading, refreshProfile } = useAuth();
+  const { session, profile, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (!authLoading && session) {
@@ -53,10 +53,10 @@ export const Register: React.FC = () => {
         if (!data.session) {
           setErrorMsg('Registration successful! Please check your email to confirm your account.');
           setLoading(false);
-        } else {
-          await refreshProfile();
-          navigate('/pending');
         }
+        // If success and session exists, do not manually navigate or fetch profile here.
+        // onAuthStateChange in AuthContext will handle it and update state,
+        // which will trigger the useEffect above to navigate smoothly.
       }
     } catch (err: any) {
       setErrorMsg(err?.message || 'An unexpected error occurred. Please try again.');

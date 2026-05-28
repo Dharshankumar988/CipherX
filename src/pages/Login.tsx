@@ -13,7 +13,7 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
-  const { session, profile, loading: authLoading, refreshProfile } = useAuth();
+  const { session, profile, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (!authLoading && session) {
@@ -67,10 +67,10 @@ export const Login: React.FC = () => {
       if (error) {
         setErrorMsg(error.message);
         setLoading(false);
-      } else {
-        await refreshProfile();
-        navigate('/');
       }
+      // If success, do not manually navigate or fetch profile here.
+      // onAuthStateChange in AuthContext will handle it and update state,
+      // which will trigger the useEffect above to navigate smoothly.
     } catch (err: any) {
       setErrorMsg(err?.message || 'An unexpected error occurred. Please try again.');
       setLoading(false);

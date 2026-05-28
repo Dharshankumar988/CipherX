@@ -95,8 +95,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .single();
 
           if (mounted) {
-            setProfile(!error && profileData ? (profileData as Profile) : null);
-            setupProfileSubscription(currentSession.user.id);
+            if (error?.code === 'PGRST116') {
+              console.error('Safety net: Profile not found. Signing out broken session.');
+              supabase.auth.signOut();
+            } else {
+              setProfile(!error && profileData ? (profileData as Profile) : null);
+              setupProfileSubscription(currentSession.user.id);
+            }
           }
         }
       } catch (e) {
@@ -122,9 +127,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           try {
             let retries = 2;
             let profileData = null;
+            let lastError = null;
             
             while (retries > 0 && !profileData) {
-              const { data } = await supabase
+              const { data, error } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', newSession.user.id)
@@ -133,14 +139,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (data) {
                 profileData = data;
               } else {
+                lastError = error;
+                if (error && error.code !== 'PGRST116') {
+                  break; // network error, stop retrying
+                }
                 await new Promise(r => setTimeout(r, 300));
                 retries--;
               }
             }
 
-            if (mounted && profileData) {
-              setProfile(profileData as Profile);
-              setupProfileSubscription(newSession.user.id);
+            if (mounted) {
+              if (profileData) {
+                setProfile(profileData as Profile);
+                setupProfileSubscription(newSession.user.id);
+              } else if (lastError?.code === 'PGRST116') {
+                console.error('Safety net: Profile not found after retries. Signing out.');
+                supabase.auth.signOut();
+              }
             }
           } catch (e) {
             console.error('Profile fetch error:', e);
