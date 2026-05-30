@@ -43,6 +43,8 @@ export const Dashboard: React.FC = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [activeContact, setActiveContact] = useState<Contact | null>(null);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+
   
   const [messages, setMessages] = useState<any[]>([]);
   const chatInputRef = useRef<HTMLInputElement>(null);
@@ -59,11 +61,14 @@ export const Dashboard: React.FC = () => {
   const [visAlgo, setVisAlgo] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
+  const globalChannelRef = useRef<any>(null);
 
   useEffect(() => {
     if (session?.user.id) {
       fetchContacts();
       fetchSettings();
+      fetchUnreadCounts();
+      setupGlobalMessageListener();
       setActiveContact(null);
       setMessages([]);
       setConversationId(null);
@@ -72,11 +77,62 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
+      if (channelRef.current) supabase.removeChannel(channelRef.current);
+      if (globalChannelRef.current) supabase.removeChannel(globalChannelRef.current);
     };
   }, []);
+
+  const fetchUnreadCounts = async () => {
+    if (!session?.user.id) return;
+    const { data } = await supabase
+      .from('messages')
+      .select('sender_id')
+      .eq('is_read', false)
+      .neq('sender_id', session.user.id);
+      
+    if (data) {
+      const counts: Record<string, number> = {};
+      data.forEach(msg => {
+        counts[msg.sender_id] = (counts[msg.sender_id] || 0) + 1;
+      });
+      setUnreadCounts(counts);
+    }
+  };
+
+  const setupGlobalMessageListener = () => {
+    if (globalChannelRef.current) supabase.removeChannel(globalChannelRef.current);
+    
+    globalChannelRef.current = supabase.channel('global_messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        const msg = payload.new as any;
+        if (session?.user.id && msg.sender_id !== session.user.id) {
+          if (activeContactRef.current !== msg.sender_id) {
+            setUnreadCounts(prev => ({
+              ...prev,
+              [msg.sender_id]: (prev[msg.sender_id] || 0) + 1
+            }));
+          } else {
+            // If the chat is open, immediately mark the newly arrived message as read in the background
+            supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then();
+          }
+        }
+      })
+      .subscribe();
+  };
+
+  const markAsRead = async (cid: string) => {
+    if (!session?.user.id) return;
+    await supabase.from('messages')
+      .update({ is_read: true })
+      .eq('conversation_id', cid)
+      .neq('sender_id', session.user.id)
+      .eq('is_read', false);
+      
+    if (activeContactRef.current) {
+      const currentRefId = activeContactRef.current;
+      setUnreadCounts(prev => ({ ...prev, [currentRefId]: 0 }));
+    }
+  };
 
   const fetchSettings = async () => {
     if (!session?.user.id) return;
@@ -207,6 +263,7 @@ export const Dashboard: React.FC = () => {
         setConversationId(shared.conversation_id);
         fetchMessages(shared.conversation_id, currentSettings);
         subscribeMessages(shared.conversation_id, currentSettings);
+        markAsRead(shared.conversation_id);
         return;
       }
     }
@@ -486,25 +543,35 @@ export const Dashboard: React.FC = () => {
             <div>
               <h3 className="text-xs font-bold text-cyber-secondary uppercase mb-2">Secure Contacts</h3>
               <div className="space-y-1">
-                {contacts.filter(c => c.status === 'approved').map(c => (
-                  <button 
-                    key={c.id}
-                    onClick={() => setActiveContact(c)}
-                    className={`w-full text-left p-3 rounded transition-colors flex items-center space-x-3 ${activeContact?.id === c.id ? 'bg-cyber-neon/10 border-l-2 border-cyber-neon' : 'hover:bg-cyber-secondary/10'}`}
-                  >
-                    <div className="w-9 h-9 rounded-full bg-cyber-card flex-shrink-0 border border-cyber-secondary/30 overflow-hidden flex items-center justify-center">
-                      {c.other_user.avatar_url ? (
-                        <img src={c.other_user.avatar_url} alt="avatar" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-xs text-cyber-neon font-bold">{(c.other_user.display_name || c.other_user.username).substring(0,2).toUpperCase()}</span>
+                {contacts.filter(c => c.status === 'approved').map(c => {
+                  const unread = unreadCounts[c.other_user.id] || 0;
+                  return (
+                    <button 
+                      key={c.id}
+                      onClick={() => setActiveContact(c)}
+                      className={`w-full text-left p-3 rounded transition-colors flex items-center space-x-3 ${activeContact?.id === c.id ? 'bg-cyber-neon/10 border-l-2 border-cyber-neon' : 'hover:bg-cyber-secondary/10'}`}
+                    >
+                      <div className="w-9 h-9 rounded-full bg-cyber-card flex-shrink-0 border border-cyber-secondary/30 overflow-hidden flex items-center justify-center relative">
+                        {c.other_user.avatar_url ? (
+                          <img src={c.other_user.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs text-cyber-neon font-bold">{(c.other_user.display_name || c.other_user.username).substring(0,2).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-sm truncate ${unread > 0 ? 'font-bold text-white' : 'font-bold text-cyber-text'}`}>{c.other_user.display_name || c.other_user.username}</p>
+                        <p className={`text-xs truncate ${unread > 0 ? 'text-cyber-neon font-bold' : 'text-cyber-secondary'}`}>
+                          {unread > 0 ? 'New encrypted message' : 'Secure channel active'}
+                        </p>
+                      </div>
+                      {unread > 0 && (
+                        <div className="w-5 h-5 rounded-full bg-cyber-neon text-cyber-bg flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(0,255,157,0.6)]">
+                          {unread > 9 ? '9+' : unread}
+                        </div>
                       )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-cyber-text truncate">{c.other_user.display_name || c.other_user.username}</p>
-                      <p className="text-xs text-cyber-secondary truncate">Secure channel active</p>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             

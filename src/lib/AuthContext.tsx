@@ -129,9 +129,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setupProfileSubscription(newSession.user.id);
               } else {
                 console.error('Profile fetch failed after retries:', error);
-                // Only sign out if we are CERTAIN the profile does not exist in the database.
-                // If it's a persistent network error, we leave profile as null and let the UI handle it
-                // instead of forcefully logging them out.
                 if (error?.code === 'PGRST116') {
                   supabase.auth.signOut();
                 }
@@ -166,8 +163,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
+    // Fallback timeout: If auth takes more than 2.5 seconds to initialize (e.g. due to deadlock or slow network),
+    // force loading to false so the user is not stuck on the loading screen.
+    // If session is null, they will be redirected to the login page.
+    const timeoutId = setTimeout(() => {
+      if (mounted && !initialised.current) {
+        console.warn('Auth initialization timeout. Unblocking UI.');
+        setLoading(false);
+      }
+    }, 2500);
+
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
       if (profileChannelRef.current) {
         supabase.removeChannel(profileChannelRef.current);

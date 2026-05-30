@@ -192,3 +192,7 @@ create index if not exists idx_contacts_addressee_id on public.contacts(addresse
 create index if not exists idx_conv_participants_user_id on public.conversation_participants(user_id);
 create index if not exists idx_messages_conversation_id on public.messages(conversation_id);
 create index if not exists idx_messages_created_at on public.messages(created_at desc);
+
+-- UNREAD MESSAGES --
+alter table public.messages add column if not exists is_read boolean default false;
+create index if not exists idx_messages_is_read on public.messages(is_read);
