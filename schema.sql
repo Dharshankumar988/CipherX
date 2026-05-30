@@ -158,6 +158,7 @@ create policy "Users can insert own settings" on public.user_settings for insert
 create policy "Users can view their contacts" on public.contacts for select using (auth.uid() = requester_id or auth.uid() = addressee_id or public.is_admin());
 create policy "Users can insert contacts" on public.contacts for insert with check (auth.uid() = requester_id);
 create policy "Users can update their received contacts" on public.contacts for update using (auth.uid() = addressee_id or public.is_admin());
+create policy "Users can delete their contacts" on public.contacts for delete using (auth.uid() = requester_id or auth.uid() = addressee_id);
 
 -- Conversations: Users can view conversations they are in.
 create policy "Users can view conversations they are in" on public.conversations for select using (

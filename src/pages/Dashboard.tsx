@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Search, UserPlus, Check, X, Send, Lock, Trash2, ArrowLeft } from 'lucide-react';
+import { Search, UserPlus, UserMinus, Check, X, Send, Lock, Trash2, ArrowLeft } from 'lucide-react';
 import { EncryptionVisualizer } from '../components/EncryptionVisualizer';
 import { encryptCaesar, decryptCaesar } from '../lib/ciphers/caesar';
 import { encryptAES, decryptAES } from '../lib/ciphers/aes';
@@ -235,6 +235,12 @@ export const Dashboard: React.FC = () => {
 
   const updateContactStatus = async (id: string, status: string) => {
     await supabase.from('contacts').update({ status }).eq('id', id);
+    fetchContacts();
+  };
+
+  const deleteContact = async (id: string) => {
+    await supabase.from('contacts').delete().eq('id', id);
+    setActiveContact(null);
     fetchContacts();
   };
 
@@ -632,7 +638,7 @@ export const Dashboard: React.FC = () => {
           {activeContact ? (
             <>
               {/* Chat Header */}
-              <div className="h-16 border-b border-cyber-secondary/20 flex items-center px-6 bg-cyber-card/50">
+              <div className="h-16 border-b border-cyber-secondary/20 flex items-center justify-between px-6 bg-cyber-card/50">
                 <div className="flex items-center space-x-3">
                   <button onClick={() => setActiveContact(null)} className="md:hidden text-cyber-neon hover:text-white mr-2">
                     <ArrowLeft size={24} />
@@ -647,6 +653,17 @@ export const Dashboard: React.FC = () => {
                     <p className="text-[10px] text-cyber-neon uppercase tracking-widest">End-to-End Encrypted</p>
                   </div>
                 </div>
+                <button 
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to remove this contact? Your encrypted chat history will be preserved if you re-add them.')) {
+                      deleteContact(activeContact.id);
+                    }
+                  }}
+                  className="text-cyber-secondary hover:text-red-500 transition-colors p-2 rounded hover:bg-red-500/10"
+                  title="Remove Contact"
+                >
+                  <UserMinus size={18} />
+                </button>
               </div>
               
               {/* Messages */}
