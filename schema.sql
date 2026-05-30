@@ -184,3 +184,11 @@ drop publication if exists supabase_realtime;
 create publication supabase_realtime;
 alter publication supabase_realtime add table public.messages;
 alter publication supabase_realtime add table public.contacts;
+
+
+-- PERFORMANCE INDEXES --
+-- To ensure smooth and efficient data retrieval when many devices are using the app
+create index if not exists idx_contacts_addressee_id on public.contacts(addressee_id);
+create index if not exists idx_conv_participants_user_id on public.conversation_participants(user_id);
+create index if not exists idx_messages_conversation_id on public.messages(conversation_id);
+create index if not exists idx_messages_created_at on public.messages(created_at desc);
