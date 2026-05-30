@@ -10,6 +10,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
     // @ts-ignore - disable cross-tab navigator.locks to prevent deadlocks
-    lock: false
+    lock: (name, acquireLock) => acquireLock()
   }
 });
