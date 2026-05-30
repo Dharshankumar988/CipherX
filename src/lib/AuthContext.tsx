@@ -104,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Supabase handles the initial session load and emits an event (INITIALIZED or SIGNED_IN)
     // We rely purely on the auth listener to prevent double-fetching on mount.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       if (!mounted) return;
       
       // Update session state synchronously so UI reacts fast
