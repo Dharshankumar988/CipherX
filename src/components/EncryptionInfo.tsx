@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Key, Lock, Fingerprint } from 'lucide-react';
+import { Shield, Key, Lock } from 'lucide-react';
 
 export const EncryptionInfo: React.FC = () => {
   return (
