@@ -76,12 +76,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const fetchProfileWithRetries = async (userId: string, maxRetries = 4) => {
+  const fetchProfileWithRetries = async (userId: string, maxRetries = 2) => {
     let retries = maxRetries;
-    let delay = 500;
+    let delay = 200;
     let lastError = null;
     
-    while (retries > 0) {
+    while (retries >= 0) {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -91,10 +91,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data) return { data: data as Profile, error: null };
       
       lastError = error;
-      // Do not stop on network errors, keep retrying. This is vital for mobile/PWA stability.
+      
+      if (retries === 0) break;
+
+      // If it's a PGRST116 (Not Found) error and we aren't waiting for a signup trigger, 
+      // retrying usually won't help existing users and just causes lag.
+      // But we will allow a very short retry in case of a slow database trigger during signup.
       await new Promise(r => setTimeout(r, delay));
       retries--;
-      delay = Math.min(delay * 1.5, 2000);
+      delay = delay * 2;
     }
     return { data: null, error: lastError };
   };
