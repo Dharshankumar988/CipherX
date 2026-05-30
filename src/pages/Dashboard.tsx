@@ -233,13 +233,13 @@ export const Dashboard: React.FC = () => {
     fetchContacts();
   };
 
-  const updateContactStatus = async (id: string, status: string) => {
-    await supabase.from('contacts').update({ status }).eq('id', id);
-    fetchContacts();
-  };
-
-  const deleteContact = async (id: string) => {
-    await supabase.from('contacts').delete().eq('id', id);
+  const severContact = async (contact: Contact) => {
+    if (!session?.user.id) return;
+    await supabase.from('contacts').update({
+      status: 'pending',
+      requester_id: contact.other_user.id,
+      addressee_id: session.user.id
+    }).eq('id', contact.id);
     setActiveContact(null);
     fetchContacts();
   };
@@ -578,30 +578,48 @@ export const Dashboard: React.FC = () => {
                 {contacts.filter(c => c.status === 'approved').map(c => {
                   const unread = unreadCounts[c.other_user.id] || 0;
                   return (
-                    <button 
+                    <div 
                       key={c.id}
-                      onClick={() => setActiveContact(c)}
-                      className={`w-full text-left p-3 rounded transition-colors flex items-center space-x-3 ${activeContact?.id === c.id ? 'bg-cyber-neon/10 border-l-2 border-cyber-neon' : 'hover:bg-cyber-secondary/10'}`}
+                      className={`w-full group p-2 md:p-3 rounded transition-colors flex items-center justify-between ${activeContact?.id === c.id ? 'bg-cyber-neon/10 border-l-2 border-cyber-neon' : 'hover:bg-cyber-secondary/10'}`}
                     >
-                      <div className="w-9 h-9 rounded-full bg-cyber-card flex-shrink-0 border border-cyber-secondary/30 overflow-hidden flex items-center justify-center relative">
-                        {c.other_user.avatar_url ? (
-                          <img src={c.other_user.avatar_url} alt="avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-xs text-cyber-neon font-bold">{(c.other_user.display_name || c.other_user.username).substring(0,2).toUpperCase()}</span>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className={`text-sm truncate ${unread > 0 ? 'font-bold text-white' : 'font-bold text-cyber-text'}`}>{c.other_user.display_name || c.other_user.username}</p>
-                        <p className={`text-xs truncate ${unread > 0 ? 'text-cyber-neon font-bold' : 'text-cyber-secondary'}`}>
-                          {unread > 0 ? 'New encrypted message' : 'Secure channel active'}
-                        </p>
-                      </div>
-                      {unread > 0 && (
-                        <div className="w-5 h-5 rounded-full bg-cyber-neon text-cyber-bg flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(0,255,157,0.6)]">
-                          {unread > 9 ? '9+' : unread}
+                      <button 
+                        onClick={() => setActiveContact(c)}
+                        className="flex-1 flex items-center space-x-3 text-left min-w-0"
+                      >
+                        <div className="w-9 h-9 rounded-full bg-cyber-card flex-shrink-0 border border-cyber-secondary/30 overflow-hidden flex items-center justify-center relative">
+                          {c.other_user.avatar_url ? (
+                            <img src={c.other_user.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xs text-cyber-neon font-bold">{(c.other_user.display_name || c.other_user.username).substring(0,2).toUpperCase()}</span>
+                          )}
                         </div>
-                      )}
-                    </button>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-sm truncate ${unread > 0 ? 'font-bold text-white' : 'font-bold text-cyber-text'}`}>{c.other_user.display_name || c.other_user.username}</p>
+                          <p className={`text-xs truncate ${unread > 0 ? 'text-cyber-neon font-bold' : 'text-cyber-secondary'}`}>
+                            {unread > 0 ? 'New encrypted message' : 'Secure channel active'}
+                          </p>
+                        </div>
+                      </button>
+                      <div className="flex items-center space-x-2 pl-2">
+                        {unread > 0 && (
+                          <div className="w-5 h-5 rounded-full bg-cyber-neon text-cyber-bg flex items-center justify-center text-[10px] font-bold shadow-[0_0_8px_rgba(0,255,157,0.6)]">
+                            {unread > 9 ? '9+' : unread}
+                          </div>
+                        )}
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Sever this conversation? It will be moved to your Pending Requests where you can restore it later.')) {
+                              severContact(c);
+                            }
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-cyber-secondary hover:text-red-500 transition-all p-1"
+                          title="Sever Conversation"
+                        >
+                          <UserMinus size={14} />
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -655,12 +673,12 @@ export const Dashboard: React.FC = () => {
                 </div>
                 <button 
                   onClick={() => {
-                    if (window.confirm('Are you sure you want to remove this contact? Your encrypted chat history will be preserved if you re-add them.')) {
-                      deleteContact(activeContact.id);
+                    if (window.confirm('Sever this conversation? It will be moved to your Pending Requests where you can restore it later.')) {
+                      severContact(activeContact);
                     }
                   }}
                   className="text-cyber-secondary hover:text-red-500 transition-colors p-2 rounded hover:bg-red-500/10"
-                  title="Remove Contact"
+                  title="Sever Conversation"
                 >
                   <UserMinus size={18} />
                 </button>
