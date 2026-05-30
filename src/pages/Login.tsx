@@ -21,9 +21,17 @@ export const Login: React.FC = () => {
         navigate('/pending', { replace: true });
       } else if (profile) {
         navigate('/', { replace: true });
+      } else {
+        // We have a session but no profile. Error state.
+        setErrorMsg('Error loading user profile. Please contact support.');
+        setLoading(false);
       }
+    } else if (!authLoading && !session && loading) {
+      // If we are locally loading but there is no session and auth finished,
+      // it means login failed or user was instantly signed out.
+      setLoading(false);
     }
-  }, [session, profile, authLoading, navigate]);
+  }, [session, profile, authLoading, navigate, loading]);
 
   if (authLoading && !session) {
     return (
