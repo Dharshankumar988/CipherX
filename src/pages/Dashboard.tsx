@@ -76,6 +76,22 @@ export const Dashboard: React.FC = () => {
   }, [session?.user.id]);
 
   useEffect(() => {
+    const handleVisibilityAndFocus = () => {
+      if (document.visibilityState === 'visible' && session?.user.id) {
+        fetchUnreadCounts();
+      }
+    };
+    
+    window.addEventListener('focus', handleVisibilityAndFocus);
+    document.addEventListener('visibilitychange', handleVisibilityAndFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleVisibilityAndFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityAndFocus);
+    };
+  }, [session?.user.id]);
+
+  useEffect(() => {
     return () => {
       if (channelRef.current) supabase.removeChannel(channelRef.current);
       if (globalChannelRef.current) supabase.removeChannel(globalChannelRef.current);
@@ -188,8 +204,8 @@ export const Dashboard: React.FC = () => {
     setContacts(Array.from(seen.values()));
   };
 
-  const handleSearch = async () => {
-    const searchEmail = searchInputRef.current?.value || '';
+  const handleSearch = async (term?: string) => {
+    const searchEmail = typeof term === 'string' ? term : searchInputRef.current?.value || '';
     if (!searchEmail.trim() || !session?.user.id) return;
     const { data, error } = await supabase
       .from('profiles')
@@ -472,6 +488,16 @@ export const Dashboard: React.FC = () => {
                 className="w-full bg-cyber-bg border border-cyber-secondary/30 text-cyber-text pl-10 p-2 rounded focus:border-cyber-accent focus:outline-none text-sm"
                 placeholder="Search username or email..."
                 ref={searchInputRef}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val.trim().length === 0) {
+                    setSearchResults([]);
+                    setHasSearched(false);
+                    return;
+                  }
+                  if ((window as any).searchTimeout) clearTimeout((window as any).searchTimeout);
+                  (window as any).searchTimeout = setTimeout(() => handleSearch(val), 300);
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
               <button onClick={handleSearch} className="bg-cyber-secondary/20 p-2 rounded text-cyber-text hover:text-cyber-neon"><Search size={18}/></button>
