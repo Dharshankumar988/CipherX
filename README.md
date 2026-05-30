@@ -22,7 +22,6 @@ For scenarios requiring symmetric keys, CipherX utilizes AES-256 (via CryptoJS).
 ### 3. Classical Ciphers (Educational)
 CipherX also includes classical cryptographic algorithms for educational and visualization purposes:
 - **Caesar Cipher**: A substitution cipher that shifts characters by a specified numeric value.
-- **Vigenère Cipher**: A polyalphabetic substitution cipher using an alphanumeric keyword.
 
 ---
 
