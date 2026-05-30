@@ -233,6 +233,11 @@ export const Dashboard: React.FC = () => {
     fetchContacts();
   };
 
+  const updateContactStatus = async (id: string, status: string) => {
+    await supabase.from('contacts').update({ status }).eq('id', id);
+    fetchContacts();
+  };
+
   const severContact = async (contact: Contact) => {
     if (!session?.user.id) return;
     await supabase.from('contacts').update({
