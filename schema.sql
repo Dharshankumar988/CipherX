@@ -178,6 +178,9 @@ create policy "Users can view messages" on public.messages for select using (
 create policy "Approved users can insert messages" on public.messages for insert with check (
   public.is_approved() and (conversation_id is null or public.is_conversation_participant(conversation_id))
 );
+create policy "Users can delete own messages" on public.messages for delete using (
+  auth.uid() = sender_id
+);
 
 -- ENABLE REALTIME --
 drop publication if exists supabase_realtime;
