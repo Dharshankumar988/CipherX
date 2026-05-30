@@ -76,98 +76,83 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const fetchProfileWithRetries = async (userId: string, maxRetries = 4) => {
+    let retries = maxRetries;
+    let delay = 500;
+    let lastError = null;
+    
+    while (retries > 0) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (data) return { data: data as Profile, error: null };
+      
+      lastError = error;
+      // Do not stop on network errors, keep retrying. This is vital for mobile/PWA stability.
+      await new Promise(r => setTimeout(r, delay));
+      retries--;
+      delay = Math.min(delay * 1.5, 2000);
+    }
+    return { data: null, error: lastError };
+  };
+
   useEffect(() => {
     let mounted = true;
 
-    const initializeAuth = async () => {
-      try {
-        // Since we disabled navigator.locks in supabase.ts, getSession won't deadlock
-        const { data } = await supabase.auth.getSession();
-        const currentSession = data?.session ?? null;
-
-        if (mounted) setSession(currentSession);
-
-        if (currentSession?.user) {
-          const { data: profileData, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentSession.user.id)
-            .single();
-
-          if (mounted) {
-            if (error?.code === 'PGRST116') {
-              console.error('Safety net: Profile not found. Signing out broken session.');
-              supabase.auth.signOut();
-            } else {
-              setProfile(!error && profileData ? (profileData as Profile) : null);
-              setupProfileSubscription(currentSession.user.id);
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Auth initialization error:', e);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-          initialised.current = true;
-        }
-      }
-    };
-
-    initializeAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    // Supabase handles the initial session load and emits an event (INITIALIZED or SIGNED_IN)
+    // We rely purely on the auth listener to prevent double-fetching on mount.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!mounted) return;
       
-      if (newSession?.user) {
-        setSession(newSession); // Set session first so Login/Register unmount immediately if needed
+      // Update session state synchronously so UI reacts fast
+      setSession(newSession);
 
+      if (newSession?.user) {
+        // If we don't have the profile for this user yet, fetch it
         if (!profileRef.current || profileRef.current.id !== newSession.user.id) {
           setLoading(true);
+          
           try {
-            let retries = 2;
-            let profileData = null;
-            let lastError = null;
-            
-            while (retries > 0 && !profileData) {
-              const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', newSession.user.id)
-                .single();
-                
-              if (data) {
-                profileData = data;
-              } else {
-                lastError = error;
-                if (error && error.code !== 'PGRST116') {
-                  break; // network error, stop retrying
-                }
-                await new Promise(r => setTimeout(r, 300));
-                retries--;
-              }
-            }
+            const { data: profileData, error } = await fetchProfileWithRetries(newSession.user.id);
 
             if (mounted) {
               if (profileData) {
-                setProfile(profileData as Profile);
+                setProfile(profileData);
                 setupProfileSubscription(newSession.user.id);
-              } else if (lastError?.code === 'PGRST116') {
-                console.error('Safety net: Profile not found after retries. Signing out.');
-                supabase.auth.signOut();
+              } else {
+                console.error('Profile fetch failed after retries:', error);
+                // Only sign out if we are CERTAIN the profile does not exist in the database.
+                // If it's a persistent network error, we leave profile as null and let the UI handle it
+                // instead of forcefully logging them out.
+                if (error?.code === 'PGRST116') {
+                  supabase.auth.signOut();
+                }
               }
             }
           } catch (e) {
-            console.error('Profile fetch error:', e);
+            console.error('Profile fetch unexpected error:', e);
           } finally {
-            if (mounted) setLoading(false);
+            if (mounted) {
+              setLoading(false);
+              initialised.current = true;
+            }
+          }
+        } else {
+          // Profile already matches, just ensure we aren't loading anymore
+          if (mounted) {
+            setLoading(false);
+            initialised.current = true;
           }
         }
       } else {
+        // No user, signed out
         if (mounted) {
           setProfile(null);
-          setSession(null);
           setLoading(false);
+          initialised.current = true;
           if (profileChannelRef.current) {
             supabase.removeChannel(profileChannelRef.current);
             profileChannelRef.current = null;
