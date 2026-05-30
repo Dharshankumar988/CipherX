@@ -6,7 +6,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 // Custom lock to prevent navigator.locks deadlocks during HMR or browser glitches
 // while still providing multi-tab concurrency protection for token refreshes.
-const customLock = async (name: string, acquireLock: () => Promise<any>) => {
+const customLock = async (name: string, _acquireTimeout: number, acquireLock: () => Promise<any>) => {
   const lockKey = `sb-lock:${name}`;
   
   // Wait up to 3 seconds for existing lock to free

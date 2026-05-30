@@ -500,7 +500,7 @@ export const Dashboard: React.FC = () => {
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
-              <button onClick={handleSearch} className="bg-cyber-secondary/20 p-2 rounded text-cyber-text hover:text-cyber-neon"><Search size={18}/></button>
+              <button onClick={() => handleSearch()} className="bg-cyber-secondary/20 p-2 rounded text-cyber-text hover:text-cyber-neon"><Search size={18}/></button>
             </div>
             
             {hasSearched && (
